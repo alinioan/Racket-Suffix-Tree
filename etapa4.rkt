@@ -184,9 +184,9 @@
                  (other-br (other-branches st)))
             (cond
               ([and (st-empty? br-subtree) (st-empty? other-br)] #f)
-              ([>= (length substring) len] (truncate-list substring len))
-              (else (let ((child-search (iter-branches br-subtree (append substring (get-branch-label first-br))))
-                          (brother-search (iter-branches other-br substring)))
+              ([>= (length substring) len] (take substring len))
+              (else (let ((child-search (iter-branches br-subtree (append substring (get-branch-label first-br)))))
                       (if (list? child-search)
                           child-search
-                          brother-search)))))))))
+                          (let ((brother-search (iter-branches other-br substring)))
+                              brother-search))))))))))
