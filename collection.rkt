@@ -35,3 +35,33 @@
 ; TODO
 ; Scrieți în continuare restul definițiilor
 ; (care nu necesită o sintaxă specială).
+
+(define-syntax-rule (collection x ...) (stream x ...))
+
+(define empty-collection empty-stream)
+
+(define-syntax-rule (collection-empty? xs) (stream-empty? xs))
+
+(define collection-first stream-first)
+
+(define collection-rest stream-rest)
+
+(define-syntax-rule (collection-append xs ys) (stream-append xs ys))
+
+(define-syntax-rule (collection-filter f xs) (stream-filter f xs))
+
+(define-syntax-rule (collection-map f xs) (stream-map f xs))
+
+(define (collection-remove-duplicates lst)
+  (if (collection-empty? lst)
+      empty-collection
+      (collection-cons (collection-first lst) 
+                   (collection-remove-duplicates 
+                    (collection-filter (lambda(x) (not (eq? x (collection-first lst)))) 
+                                   (collection-rest lst))))))
+
+
+
+
+
+

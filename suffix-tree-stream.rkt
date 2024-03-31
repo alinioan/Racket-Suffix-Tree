@@ -61,29 +61,34 @@
 
 ; arborele de sufixe vid
 ; empty-st : -> ST
-(define empty-st 'your-code-here)
+(define empty-st empty-stream)
 
 ; operatorul care verifică dacă un ST este vid
 ; st-empty? : ST -> Bool
-(define st-empty? 'your-code-here)
+(define (st-empty? st)
+  (stream-empty? st))
 
 ; operatorul care extrage prima ramură a unui ST
 ; first-branch : ST -> (Label, ST)
-(define first-branch 'your-code-here)
+(define (first-branch st)
+  (stream-first st))
 
 ; operatorul care extrage restul ramurilor unui ST (fără prima)
 ; other-branches : ST -> [(Label, ST)]
 ; Obs: signatura [(Label, ST)] se citește aici ca "flux de  
 ; perechi între o etichetă și un ST"
-(define other-branches 'your-code-here)
+(define (other-branches st)
+  (stream-rest st))
 
 ; operatorul care extrage eticheta din vârful unei ramuri
 ; get-branch-label : (Label, ST) -> Label
-(define get-branch-label 'your-code-here)
+(define (get-branch-label branch)
+  (car branch))
 
 ; operatorul care extrage subarborele de sub eticheta ramurii
 ; get-branch-subtree : (Label, ST) -> ST
-(define get-branch-subtree 'your-code-here)
+(define (get-branch-subtree branch)
+  (cdr branch))
 
 ; operatorul care identifică ramura unui ST a cărei etichetă
 ; începe cu caracterul ch, dacă o asemenea ramură există
@@ -94,4 +99,7 @@
 ; Obs: Dacă în etapa 1 ați respectat bariera de abstractizare,
 ; implementarea funcției get-ch-branch nu va trebui modificată.
 (define (get-ch-branch st ch)
-  'your-code-here)
+  (cond
+    ([st-empty? st] #f)
+    ([equal? (car (get-branch-label (first-branch st))) ch] (first-branch st))
+    (else (get-ch-branch (other-branches st) ch))))

@@ -54,67 +54,139 @@
 ; Obs: cu cât mai multe funcții rămân nemodificate, cu atât
 ; este mai bine (înseamnă că design-ul inițial a fost bun).
 
-(define (longest-common-prefix w1 w2)
-  'your-code-here)
+(define (longest-common-prefix w1 w2 [res '()])
+  (if (and (not (collection-empty? w1))
+           (not (collection-empty? w2))
+           (equal? (collection-first w1) (collection-first w2)))
+      (longest-common-prefix (collection-rest w1)
+                             (collection-rest w2)
+                             (append res (list (collection-first w1))))
+      (list res w1 w2)))
 
 
 ; am schimbat, în numele funcției, cuvântul list în
 ; cuvântul collection
-(define (longest-common-prefix-of-collection words)
-  'your-code-here)
+(define (longest-common-prefix-of-collection words [prefix '()])
+  (cond
+    ([collection-empty? words] prefix)
+    ([empty? prefix] (longest-common-prefix-of-collection
+                      (collection-rest (collection-rest words))
+                      (car (longest-common-prefix (collection-first words)
+                                                  (collection-first (collection-rest words))))))
+    (else (longest-common-prefix-of-collection
+           (collection-rest words)
+           (car (longest-common-prefix (collection-first words) prefix))))))
 
 
 (define (match-pattern-with-label st pattern)
-  'your-code-here)
-
-
+  (let* ((branch (get-ch-branch st (car pattern)))
+         (label (if (equal? branch #f) '() (get-branch-label branch)))
+         (words (longest-common-prefix (list->stream label) pattern))
+         (prefix (car words)))
+    (cond
+      ([equal? prefix pattern] #t)
+      ([equal? branch #f] (list #f '()))
+      ([and (not (equal? prefix pattern)) (not (equal? prefix label))] (list #f prefix))
+      (else (list label (caddr words) (get-branch-subtree branch))))))
+  
+  
 (define (st-has-pattern? st pattern)
-  'your-code-here)
-
+  (let* ((result (match-pattern-with-label st pattern)))
+    (if (list? result)
+        (if (equal? (car result) #f)
+            #f
+            (st-has-pattern? (caddr result) (cadr result)))
+        #t)))
+ 
 
 (define (get-suffixes text)
-  'your-code-here)
+  (cond
+    ([collection-empty? text] empty-collection)
+    (else (collection-cons text (get-suffixes (cdr text))))))
 
 
 (define (get-ch-words words ch)
-  'your-code-here)
+  (collection-filter (λ (word) (and (not (null? word)) (equal? (car word) ch))) words))
 
 
 (define (ast-func suffixes)
-  'your-code-here)
+  (if (collection-empty? suffixes)
+      suffixes
+      (cons (list (collection-first (collection-first suffixes))) (collection-map stream-rest suffixes))))
 
 
 (define (cst-func suffixes)
-  'your-code-here)
+  (cond
+    ([collection-empty? suffixes] suffixes)
+    ([collection-empty? (collection-rest suffixes)] (cons (collection-first suffixes) empty-collection))
+    (else (let* ((prefix (longest-common-prefix-of-collection suffixes)))
+            (cons prefix (collection-map (λ (word) (caddr (longest-common-prefix prefix word))) suffixes))))))
 
 
 ; considerați că și parametrul alphabet este un flux
 ; (desigur, și suffixes este un flux, fiind o colecție
 ; de sufixe)
 (define (suffixes->st labeling-func suffixes alphabet)
-  'your-code-here)
+  (let* ((partial-st-with-null (collection-map (λ (chr) (labeling-func
+                                                         (get-ch-words suffixes chr)))
+                                               alphabet))
+         (partial-st (collection-filter (λ (x) (pair? x))
+                                        partial-st-with-null)))
+    (collection-map (λ (branch)
+                      (if (collection-empty? (cdr branch))
+                          branch
+                          (cons (car branch) (suffixes->st labeling-func (cdr branch) alphabet))))
+                    partial-st)))
+
 
 
 ; nu uitați să convertiți alfabetul într-un flux
-(define text->st
-  'your-code-here)
+(define (list->stream L)
+  (if (null? L)
+      empty-stream
+      (stream-cons (car L) (list->stream (cdr L)))))
+
+(define (text->st labeling-func)
+  (λ (text)
+    (let* ((suffixes (get-suffixes (append text '(#\$))))
+           (alphabet (list->stream (sort (remove-duplicates (map car (stream->list suffixes))) char<?))))
+      (suffixes->st labeling-func suffixes alphabet))))
 
 
 (define text->ast
-  'your-code-here)
+  (text->st ast-func))
 
 
 (define text->cst
-  'your-code-here)
+  (text->st cst-func))
 
 
 ; dacă ați respectat bariera de abstractizare,
 ; această funcție va rămâne nemodificată.
 (define (substring? text pattern)
-  'your-code-here)
+  (st-has-pattern? (text->ast text) pattern))
 
 
 ; dacă ați respectat bariera de abstractizare,
 ; această funcție va rămâne nemodificată.
+(define (truncate-list list len [new-list '()])
+  (if (zero? len)
+      (reverse new-list)
+      (truncate-list (cdr list) (sub1 len) (cons (car list) new-list))))
+
 (define (repeated-substring-of-given-length text len)
-  'your-code-here)
+  (let ((st (text->cst text)))
+    (let iter-branches ((st st) (substring '()))
+      (if (st-empty? st)
+          #f
+          (let* ((first-br (first-branch st))
+                 (br-subtree (get-branch-subtree first-br))
+                 (other-br (other-branches st)))
+            (cond
+              ([and (st-empty? br-subtree) (st-empty? other-br)] #f)
+              ([>= (length substring) len] (truncate-list substring len))
+              (else (let ((child-search (iter-branches br-subtree (append substring (get-branch-label first-br))))
+                          (brother-search (iter-branches other-br substring)))
+                      (if (list? child-search)
+                          child-search
+                          brother-search)))))))))
